@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VS Code Mobile</string>
+    <string name="default_url">https://vscode.dev/</string>
+    <string name="menu_open_url">Open URL…</string>
+    <string name="menu_reload">Reload</string>
+    <string name="url_hint">https://vscode.dev/ or http://192.168.1.50:8080</string>
+    <string name="url_dialog_title">Open VS Code instance</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+</resources>
