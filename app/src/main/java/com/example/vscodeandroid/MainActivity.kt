@@ -165,15 +165,26 @@ class MainActivity : AppCompatActivity() {
         val js = assets.open("inject.js").bufferedReader().use { it.readText() }
         val b64css = Base64.encodeToString(css.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
         val b64js = Base64.encodeToString(js.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+        // Inline <style> (not data: URI) so VS Code's CSP does not block it; run via
+        // evaluateJavascript so it is not subject to CSP at all. Re-applied as the
+        // workbench boots asynchronously (the initial page is just a loader).
         val script = """
             (function(){
-              var l=document.createElement('link');
-              l.rel='stylesheet';l.type='text/css';
-              l.href='data:text/css;base64,$b64css';
-              (document.head||document.documentElement).appendChild(l);
-              var s=document.createElement('script');
-              s.textContent=atob('$b64js');
-              (document.head||document.documentElement).appendChild(s);
+              var CSS = atob('$b64css');
+              var JS = atob('$b64js');
+              function apply(){
+                var s = document.getElementById('vsm-style');
+                if(!s){ s = document.createElement('style'); s.id='vsm-style';
+                  (document.head||document.documentElement).appendChild(s); }
+                s.textContent = CSS;
+              }
+              apply();
+              try { if (window.MutationObserver) {
+                new MutationObserver(function(){ apply(); })
+                  .observe(document.documentElement, {childList:true, subtree:true});
+              } } catch(e){}
+              try { (new Function(JS))(); } catch(e){}
+              setTimeout(apply, 800); setTimeout(apply, 2000); setTimeout(apply, 4000);
             })();
         """.trimIndent()
         webView.evaluateJavascript(script, null)
