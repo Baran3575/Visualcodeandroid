@@ -15,6 +15,11 @@ jobs:
   build:
     name: Build signed release APK
     runs-on: ubuntu-latest
+    env:
+      KEYSTORE: ${{ secrets.KEYSTORE }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,8 +35,8 @@ jobs:
 
       - name: Install SDK packages & accept licenses
         run: |
-          yes | sdkmanager --licenses || true
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          yes | sdkmanager --licenses || true
 
       - name: Install Gradle 8.9 (no local Gradle needed)
         run: |
@@ -40,12 +45,10 @@ jobs:
           echo "/opt/gradle-8.9/bin" >> "$GITHUB_PATH"
 
       - name: Build release APK
-        env:
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
-        run: gradle assembleRelease --no-daemon
+        run: export ANDROID_SDK_ROOT="$ANDROID_HOME" && gradle assembleRelease --no-daemon
 
       - name: Sign APK
-        if: ${{ secrets.KEYSTORE != '' }}
+        if: ${{ env.KEYSTORE != '' }}
         id: sign
         uses: r0adkll/sign-android-release@v1
         with:
@@ -56,21 +59,21 @@ jobs:
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
       - name: Upload signed artifact
-        if: ${{ secrets.KEYSTORE != '' }}
+        if: ${{ env.KEYSTORE != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: app-release-signed
           path: ${{ steps.sign.outputs.signedReleaseFile }}
 
       - name: Upload unsigned artifact (no secrets configured)
-        if: ${{ secrets.KEYSTORE == '' }}
+        if: ${{ env.KEYSTORE == '' }}
         uses: actions/upload-artifact@v4
         with:
           name: app-release-unsigned
           path: app/build/outputs/apk/release/*.apk
 
       - name: Publish to GitHub Release
-        if: ${{ github.event_name == 'release' && secrets.KEYSTORE != '' }}
-        uses: softprops/action-gh-release@v2
+        if: ${{ github.event_name == 'release' && env.KEYSTORE != '' }}
+        uses: softprops/action-gh-release@v1
         with:
           files: ${{ steps.sign.outputs.signedReleaseFile }}
