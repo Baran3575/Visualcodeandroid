@@ -35,14 +35,14 @@ jobs:
 
       - name: Install SDK packages & accept licenses
         run: |
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "build-tools;29.0.3"
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;35.0.0" "build-tools;34.0.0" "build-tools;29.0.3"
           yes | sdkmanager --licenses || true
 
       - name: Install Gradle 8.9 (no local Gradle needed)
         run: |
-          curl -sL https://services.gradle.org/distributions/gradle-8.9-bin.zip -o /tmp/gradle.zip
+          curl -sL https://services.gradle.org/distributions/gradle-8.12-bin.zip -o /tmp/gradle.zip
           unzip -q /tmp/gradle.zip -d /opt
-          echo "/opt/gradle-8.9/bin" >> "$GITHUB_PATH"
+          echo "/opt/gradle-8.12/bin" >> "$GITHUB_PATH"
 
       - name: Build release APK
         run: export ANDROID_SDK_ROOT="$ANDROID_HOME" && gradle assembleRelease --no-daemon

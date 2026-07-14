@@ -166,25 +166,25 @@ class MainActivity : AppCompatActivity() {
         val b64css = Base64.encodeToString(css.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
         val b64js = Base64.encodeToString(js.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
         // Inline <style> (not data: URI) so VS Code's CSP does not block it; run via
-        // evaluateJavascript so it is not subject to CSP at all. Re-applied as the
-        // workbench boots asynchronously (the initial page is just a loader).
+        // evaluateJavascript so it is not subject to CSP at all.
+        // Re-applied on a few timers because the workbench boots asynchronously
+        // (the first HTML is just a loader). No MutationObserver: it re-fires on the
+        // style element itself and would loop forever, hanging the page.
         val script = """
             (function(){
-              var CSS = atob('$b64css');
-              var JS = atob('$b64js');
-              function apply(){
-                var s = document.getElementById('vsm-style');
-                if(!s){ s = document.createElement('style'); s.id='vsm-style';
-                  (document.head||document.documentElement).appendChild(s); }
-                s.textContent = CSS;
-              }
-              apply();
-              try { if (window.MutationObserver) {
-                new MutationObserver(function(){ apply(); })
-                  .observe(document.documentElement, {childList:true, subtree:true});
-              } } catch(e){}
-              try { (new Function(JS))(); } catch(e){}
-              setTimeout(apply, 800); setTimeout(apply, 2000); setTimeout(apply, 4000);
+              try {
+                var CSS = atob('$b64css');
+                var JS = atob('$b64js');
+                function apply(){
+                  var s = document.getElementById('vsm-style');
+                  if(!s){ s = document.createElement('style'); s.id='vsm-style';
+                    (document.head||document.documentElement).appendChild(s); }
+                  s.textContent = CSS;
+                }
+                apply();
+                try { (new Function(JS))(); } catch(e){}
+                [400,1200,2500,5000,9000].forEach(function(d){ setTimeout(apply, d); });
+              } catch(e){}
             })();
         """.trimIndent()
         webView.evaluateJavascript(script, null)
