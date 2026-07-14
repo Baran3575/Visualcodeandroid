@@ -35,7 +35,7 @@ jobs:
 
       - name: Install SDK packages & accept licenses
         run: |
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "build-tools;29.0.3"
           yes | sdkmanager --licenses || true
 
       - name: Install Gradle 8.9 (no local Gradle needed)
